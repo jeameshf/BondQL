@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BondQL · 智能问数</title>
+<style>
+:root {
+  --primary: #2563EB; --primary-light: #EFF6FF; --primary-dark: #1D4ED8;
+  --accent: #7C3AED; --accent-light: #F5F3FF;
+  --orange: #F97316; --orange-light: #FFF7ED;
+  --green: #16A34A; --green-light: #F0FDF4;
+  --red: #DC2626; --red-light: #FEF2F2;
+  --yellow: #CA8A04; --yellow-light: #FEFCE8;
+  --purple: #7C3AED; --purple-light: #F5F3FF;
+  --teal: #0D9488; --teal-light: #F0FDFA;
+  --gray-50: #F9FAFB; --gray-100: #F3F4F6; --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB; --gray-400: #9CA3AF; --gray-500: #6B7280;
+  --gray-600: #4B5563; --gray-700: #374151; --gray-800: #1F2937; --gray-900: #111827;
+  --radius: 8px; --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--gray-50); color: var(--gray-800); font-size: 14px; line-height: 1.6; overflow: hidden; height: 100vh; }
+button, input, textarea, select { font-family: inherit; }
+.app { display: flex; height: 100vh; }
+
+/* ===== 侧边导航 ===== */
+.sidebar { width: 240px; background: var(--gray-900); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s; }
+.sidebar-header { padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 11px; }
+.logo { width: 36px; height: 36px; background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; letter-spacing: -0.5px; color:#fff; box-shadow: 0 4px 10px rgba(37,99,235,0.35); }
+.sidebar-title { font-size: 15px; font-weight: 700; letter-spacing: 0.2px; }
+.sidebar-sub { font-size: 10px; color: var(--gray-500); }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+.nav-section { margin-bottom: 2px; }
+.nav-section-title { padding: 12px 20px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); font-weight: 700; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; cursor: pointer; transition: all 0.15s; font-size: 13px; color: rgba(255,255,255,0.62); border-left: 3px solid transparent; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.nav-item.active { background: rgba(37,99,235,0.16); color: #fff; border-left-color: var(--primary); }
+.nav-item .ni { width: 18px; text-align: center; font-size: 15px; }
+.nav-item .nb { margin-left: auto; background: var(--primary); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #F59E0B, #EF4444); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color:#fff; flex-shrink:0; }
+
+/* ===== 主内容 ===== */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.topbar { height: 54px; background: #fff; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; }
+.topbar-tabs { display: flex; gap: 2px; }
+.topbar-tab { padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--gray-500); transition: all 0.15s; white-space: nowrap; }
+.topbar-tab:hover { background: var(--gray-100); color: var(--gray-700); }
+.topbar-tab.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.topbar-spacer { flex: 1; }
+.ws-selector { padding: 5px 12px; background: var(--gray-100); border-radius: 6px; font-size: 12px; color: var(--gray-600); cursor: pointer; display: flex; align-items: center; gap: 6px; position: relative; }
+.ws-selector:hover { background: var(--gray-200); }
+.ws-menu { position: absolute; top: 34px; right: 0; background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; box-shadow: var(--shadow-lg); min-width: 200px; z-index: 50; display: none; padding: 6px; }
+.ws-menu.open { display: block; }
+.ws-menu-item { padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--gray-700); display:flex; align-items:center; gap:8px; }
+.ws-menu-item:hover { background: var(--gray-50); }
+.ws-menu-item.active { background: var(--primary-light); color: var(--primary); font-weight:600; }
+.ws-menu-item .ck { margin-left:auto; color: var(--primary); }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+.page { display: none; animation: fadeIn 0.2s ease-out; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== 通用组件 ===== */
+.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+.page-title { font-size: 18px; font-weight: 700; }
+.page-sub { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.card { background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); overflow: hidden; }
+.card-header { padding: 14px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 14px; font-weight: 600; }
+.card-body { padding: 20px; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+
+.btn { padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-p { background: var(--primary); color: #fff; }
+.btn-p:hover { background: var(--primary-dark); }
+.btn-s { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-300); }
+.btn-s:hover { background: var(--gray-50); border-color: var(--gray-400); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-g { background: var(--green); color: #fff; }
+.btn-g:hover { background: #15803D; }
+.btn-d { background: var(--red); color:#fff; }
+.btn-d:hover { background:#B91C1C; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.icon-btn { background:none; border:none; cursor:pointer; font-size:14px; color:var(--gray-500); padding:4px 6px; border-radius:6px; transition:all .15s; }
+.icon-btn:hover { background:var(--gray-100); color:var(--gray-800); }
+
+.tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.t-blue { background: var(--primary-light); color: var(--primary); }
+.t-green { background: var(--green-light); color: var(--green); }
+.t-orange { background: var(--orange-light); color: var(--orange); }
+.t-red { background: var(--red-light); color: var(--red); }
+.t-gray { background: var(--gray-100); color: var(--gray-600); }
+.t-purple { background: var(--purple-light); color: var(--purple); }
+.t-yellow { background: var(--yellow-light); color: var(--yellow); }
+.t-teal { background: var(--teal-light); color: var(--teal); }
+
+.stat { background: #fff; border-radius: var(--radius-lg); padding: 18px 20px; border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); }
+.stat-label { font-size: 12px; color: var(--gray-500); margin-bottom: 4px; }
+.stat-val { font-size: 26px; font-weight: 700; color: var(--gray-900); }
+.stat-chg { font-size: 12px; margin-top: 3px; }
+.up { color: var(--green); } .down { color: var(--red); }
+
+.tbl-wrap { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tbl th { text-align: left; padding: 9px 14px; background: var(--gray-50); font-weight: 600; color: var(--gray-600); font-size: 12px; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
+table.tbl td { padding: 9px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
+table.tbl tr:hover td { background: var(--gray-50); }
+table.tbl tr:last-child td { border-bottom: none; }
+table.tbl code { background: var(--gray-100); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--gray-700); font-family: "JetBrains Mono","Fira Code",monospace; }
+
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.search { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 6px 12px; min-width: 220px; }
+.search input { border: none; outline: none; background: transparent; font-size: 13px; flex: 1; color: var(--gray-800); }
+.search .si { color: var(--gray-400); }
+.empty { text-align: center; padding: 40px; color: var(--gray-400); font-size: 13px; }
+.empty .ei { font-size: 36px; margin-bottom: 8px; }
+
+/* ===== 聊天布局 ===== */
+.chat-wrap { display: flex; gap: 16px; height: calc(100vh - 130px); }
+.chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg); overflow: hidden; }
+.chat-msgs { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.msg { display: flex; gap: 12px; max-width: 86%; }
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-av { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.msg-av.u { background: var(--primary); color: #fff; }
+.msg-av.b { background: linear-gradient(135deg, #F97316, #EF4444); color: #fff; }
+.msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 13px; line-height: 1.7; }
+.msg.user .msg-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.msg.bot .msg-bubble { background: #fff; border: 1px solid var(--gray-200); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+
+.steps { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray-500); }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot.done { background: var(--green); }
+.dot.active { background: var(--primary); animation: pulse 1.4s infinite; }
+.dot.pending { background: var(--gray-300); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.result-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; overflow: hidden; margin-top: 10px; }
+.result-hd { padding: 10px 14px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; gap: 8px; flex-wrap: wrap; }
+.result-bd { padding: 14px; }
+.result-meta { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+.chart-tabs { display: flex; gap: 4px; }
+.chart-tab { padding: 3px 10px; border-radius: 5px; cursor: pointer; font-size: 11px; color: var(--gray-500); border: 1px solid transparent; }
+.chart-tab.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); font-weight: 600; }
+.chart-area { min-height: 200px; display: flex; align-items: center; justify-content: center; }
+.chart-area svg { max-width: 100%; height: auto; }
+
+.chat-input-area { padding: 14px 20px; background: #fff; border-top: 1px solid var(--gray-200); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip { padding: 5px 12px; background: var(--primary-light); color: var(--primary); border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; }
+.chip:hover { background: #DBEAFE; border-color: var(--primary); }
+.chip.follow { background: var(--gray-100); color: var(--gray-600); }
+.chip.follow:hover { border-color: var(--gray-300); background: var(--gray-200); }
+.input-box { display: flex; align-items: center; gap: 10px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 12px; padding: 4px 4px 4px 16px; }
+.input-box:focus-within { border-color: var(--primary); background: #fff; }
+.input-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 14px; padding: 10px 0; color: var(--gray-800); }
+.input-box input::placeholder { color: var(--gray-400); }
+.typing { display:inline-flex; gap:3px; align-items:center; }
+.typing i { width:5px; height:5px; border-radius:50%; background:var(--gray-400); animation: blink 1.2s infinite; }
+.typing i:nth-child(2){ animation-delay:.2s; } .typing i:nth-child(3){ animation-delay:.4s; }
+@keyframes blink { 0%,80%,100%{opacity:.3;} 40%{opacity:1;} }
+
+/* 右侧依据面板 */
+.evidence { width: 330px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.ev-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; overflow: hidden; }
+.ev-hd { padding: 10px 14px; background: var(--gray-50); font-size: 12px; font-weight: 600; color: var(--gray-600); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+.ev-bd { padding: 12px 14px; font-size: 12px; }
+.kv { display: flex; justify-content: space-between; padding: 4px 0; gap: 8px; }
+.kk { color: var(--gray-500); flex-shrink: 0; }
+.kv2 { color: var(--gray-800); font-weight: 500; text-align: right; }
+
+.code { background: var(--gray-900); color: #E5E7EB; border-radius: 8px; padding: 12px 14px; font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 11px; line-height: 1.7; overflow-x: auto; white-space: pre; }
+.code .kw { color: #C084FC; } .code .fn { color: #60A5FA; } .code .str { color: #34D399; } .code .cm { color: #6B7280; } .code .num { color: #FBBF24; }
+
+/* ===== 表管理画布 ===== */
+.model-canvas { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding: 24px; background: var(--gray-50); border-radius: 10px; min-height: 160px; }
+.model-node { padding: 10px 16px; border-radius: 8px; font-size: 12px; font-weight: 500; text-align: center; min-width: 120px; cursor: pointer; }
+.model-node small { display:block; font-size: 10px; font-weight: 400; }
+.model-fact { background: var(--primary); color: #fff; }
+.model-fact small { color: rgba(255,255,255,0.8); }
+.model-dim { background: #fff; border: 2px solid var(--gray-300); color: var(--gray-700); }
+.model-arrow { color: var(--gray-400); font-size: 20px; align-self: center; display:flex; flex-direction:column; align-items:center; }
+.model-arrow span { font-size: 9px; color: var(--gray-400); }
+
+/* ===== 规则组卡片 ===== */
+.rule-group { background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.rule-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rule-group-name { font-size: 14px; font-weight: 600; }
+.rule-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: var(--gray-50); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+
+/* ===== 小助手预览 ===== */
+.assistant-preview { background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%); border-radius: 12px; padding: 24px; color: #fff; text-align: center; }
+.assistant-btn { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--gray-800); padding: 10px 20px; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 14px; box-shadow: var(--shadow-md); }
+
+/* ===== 表单 ===== */
+.form-grid { display: grid; gap: 14px; }
+.fg2 { grid-template-columns: repeat(2, 1fr); }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; }
+.field label .req { color: var(--red); }
+.field input, .field textarea, .field select { width: 100%; border: 1px solid var(--gray-300); border-radius: 7px; padding: 8px 11px; font-size: 13px; color: var(--gray-800); outline: none; background: #fff; transition: all .15s; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.field textarea { min-height: 90px; resize: vertical; font-family: inherit; }
+.field .hint { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+.field input[type=checkbox] { width: auto; }
+
+/* 开关 */
+.switch { position: relative; display: inline-block; width: 38px; height: 20px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: var(--gray-300); border-radius: 20px; transition: .2s; }
+.slider:before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.switch input:checked + .slider { background: var(--primary); }
+.switch input:checked + .slider:before { transform: translateX(18px); }
+
+/* ===== 弹窗 ===== */
+.modal-mask { position: fixed; inset: 0; background: rgba(17,24,39,0.45); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-mask.open { display: flex; }
+.modal { background: #fff; border-radius: 14px; box-shadow: var(--shadow-lg); width: 100%; max-width: 560px; max-height: 90vh; display: flex; flex-direction: column; animation: pop 0.18s ease-out; }
+.modal-lg { max-width: 720px; }
+@keyframes pop { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-hd { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 15px; font-weight: 700; }
+.modal-bd { padding: 20px; overflow-y: auto; }
+.modal-ft { padding: 14px 20px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* 确认弹窗 */
+.confirm-box { text-align: center; padding: 8px 4px; }
+.confirm-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--red-light); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 12px; }
+.confirm-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.confirm-text { font-size: 13px; color: var(--gray-500); }
+
+/* ===== Toast ===== */
+.toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+.toast { background: var(--gray-900); color: #fff; padding: 11px 16px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 9px; animation: slideIn 0.25s ease-out; max-width: 360px; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+.toast.out { animation: slideOut 0.25s ease-in forwards; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideOut { to { opacity: 0; transform: translateX(20px); } }
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+@media (max-width: 1300px) { .evidence { display: none; } .g4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1100px) { .g3 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) {
+  .sidebar { width: 56px; }
+  .sidebar-title,.sidebar-sub,.nav-section-title,.nav-item span:not(.ni),.sidebar-footer div { display: none; }
+  .sidebar-header { justify-content: center; padding: 14px 0; }
+  .nav-item { justify-content: center; padding: 10px 0; }
+  .g2,.g3,.g4 { grid-template-columns: 1fr; }
+  .fg2 { grid-template-columns: 1fr; }
+  .topbar { padding: 0 12px; overflow-x: auto; }
+  .content { padding: 16px; }
+  .msg { max-width: 96%; }
+}/* ===== 登录页 ===== */
+.login-mask { position: fixed; inset: 0; z-index: 300; background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 45%, #7C3AED 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-box { background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 400px; padding: 36px 32px; }
+.login-logo { width: 52px; height: 52px; background: linear-gradient(135deg, #2563EB, #7C3AED); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: #fff; margin: 0 auto 16px; }
+.login-title { text-align: center; font-size: 22px; font-weight: 700; color: #1F2937; }
+.login-sub { text-align: center; font-size: 13px; color: #94A3B8; margin: 4px 0 24px; }
+.login-box .field { margin-bottom: 14px; }
+.login-box input { width: 100%; border: 1px solid #E2E8F0; border-radius: 9px; padding: 11px 13px; font-size: 14px; outline: none; box-sizing: border-box; }
+.login-box input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.login-btn { width: 100%; padding: 11px; background: linear-gradient(135deg, #2563EB, #7C3AED); color: #fff; border: none; border-radius: 9px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.login-btn:hover { opacity: 0.92; }
+.login-hint { text-align: center; font-size: 12px; color: #94A3B8; margin-top: 16px; line-height: 1.9; }
+
+/* ===== 模型选择栏 ===== */
+.model-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; color: #64748B; }
+.model-select { border: 1px solid #E2E8F0; border-radius: 7px; padding: 5px 10px; font-size: 12px; color: #1F2937; background: #fff; outline: none; max-width: 240px; }
+
+/* ===== 表字段注解 ===== */
+.field-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.field-table th { text-align: left; padding: 8px 10px; background: #F8FAFC; color: #64748B; font-size: 12px; border-bottom: 1px solid #E2E8F0; }
+.field-table td { padding: 6px 10px; border-bottom: 1px solid #F1F5F9; color: #374151; }
+.field-table input { width: 100%; border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px 8px; font-size: 12px; box-sizing: border-box; }
+.field-table code { background: #F1F5F9; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; }
+
+/* ===== 拖拽式表关联画布 ===== */
+.rel-canvas { position: relative; background: #F8FAFC; border-radius: 12px; min-height: 440px; overflow: hidden; border: 1px dashed #D1D5DB; }
+.rel-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.rel-node { position: absolute; width: 210px; background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: grab; user-select: none; z-index: 2; }
+.rel-node:active { cursor: grabbing; }
+.rel-node-hd { padding: 8px 12px; border-bottom: 1px solid #F1F5F9; font-weight: 600; font-size: 13px; color: #1F2937; border-radius: 10px 10px 0 0; display: flex; align-items: center; gap: 6px; background: #F8FAFC; }
+.rel-node-hd small { font-weight: 400; color: #94A3B8; font-size: 10px; }
+.rel-field { display: flex; align-items: center; justify-content: space-between; padding: 5px 12px; font-size: 12px; color: #475569; cursor: crosshair; border-radius: 5px; }
+.rel-field:hover { background: #EFF6FF; color: #2563EB; }
+.rel-field .dot { width: 7px; height: 7px; border-radius: 50%; background: #CBD5E1; }
+.rel-field.sel { background: #DBEAFE; color: #1D4ED8; }
+.rel-field.sel .dot { background: #2563EB; }
+.rel-hint { position: absolute; top: 10px; right: 12px; font-size: 11px; color: #64748B; background: #fff; padding: 4px 10px; border-radius: 6px; border: 1px solid #E2E8F0; z-index: 3; }
+
+/* ===== 数据分析面板 ===== */
+.analysis-box { background: linear-gradient(135deg, #EEF2FF, #F5F3FF); border: 1px solid #C7D2FE; border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
+.analysis-title { font-size: 13px; font-weight: 700; color: #4338CA; margin-bottom: 8px; }
+.analysis-list { font-size: 12.5px; color: #3730A3; line-height: 1.9; margin: 0; padding-left: 0; list-style: none; }
+.analysis-list li { padding-left: 16px; position: relative; }
+.analysis-list li::before { content: "▸"; position: absolute; left: 0; color: #818CF8; }
+.ai-summary { font-size: 12.5px; color: #312E81; line-height: 1.8; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #C7D2FE; }
+
+/* ===== 用户页脚 / 登出 ===== */
+.user-footer { display: flex; align-items: center; gap: 10px; }
+.user-footer .uf-main { flex: 1; min-width: 0; }
+.logout-btn { background: rgba(255,255,255,0.08); border: none; color: #fff; cursor: pointer; border-radius: 6px; padding: 6px 8px; font-size: 12px; }
+.logout-btn:hover { background: rgba(255,255,255,0.16); }
+
+/* ===== 数据源多选列表 ===== */
+.ds-check-list { display: flex; flex-direction: column; gap: 4px; max-height: 210px; overflow-y: auto; border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px; }
+.ds-check-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; padding: 4px 6px; border-radius: 6px; }
+.ds-check-item:hover { background: #F8FAFC; }
+.ds-check-item input { width: auto; }
+
+/* ===== 关联编辑器：工具条 / 表格库 / 保存 ===== */
+.rel-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; font-size: 12px; color: #64748B; }
+.rel-toolbar select { border: 1px solid #E2E8F0; border-radius: 7px; padding: 6px 10px; font-size: 12px; outline: none; }
+.rel-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding: 10px; border: 1px dashed #D1D5DB; border-radius: 10px; background: #fff; min-height: 44px; align-items: center; }
+.rel-picker-title { font-size: 12px; color: #94A3B8; margin-right: 4px; }
+.rel-picker-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; border-radius: 16px; font-size: 12px; cursor: grab; }
+.rel-picker-chip:active { cursor: grabbing; }
+.rel-picker-chip small { color: #94A3B8; font-size: 10px; }
+.rel-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.conn-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.conn-dot.ok { background: #16A34A; }
+.conn-dot.fail { background: #DC2626; }
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- 侧边导航 -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">B</div>
+    <div><div class="sidebar-title">BondQL</div><div class="sidebar-sub">智能问数 · Intelligent BI</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">问数工作台</div>
+      <div class="nav-item active" data-page="chat"><span class="ni">💬</span><span>智能问数</span></div>
+      <div class="nav-item" data-page="dashboard"><span class="ni">📊</span><span>仪表板</span></div>
+      <div class="nav-item" data-page="history"><span class="ni">🕐</span><span>问数历史</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">数据管理</div>
+      <div class="nav-item" data-page="datasources"><span class="ni">🗄️</span><span>数据源管理</span></div>
+      <div class="nav-item" data-page="table-management"><span class="ni">📋</span><span>表管理</span></div>
+      <div class="nav-item" data-page="table-relations"><span class="ni">🔗</span><span>表关联关系</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">业务上下文配置</div>
+      <div class="nav-item" data-page="terms"><span class="ni">📖</span><span>术语配置</span></div>
+      <div class="nav-item" data-page="sql-examples"><span class="ni">📝</span><span>SQL示例库</span></div>
+      <div class="nav-item" data-page="prompts"><span class="ni">⚙️</span><span>自定义提示词</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">权限管理</div>
+      <div class="nav-item" data-page="permissions"><span class="ni">🔐</span><span>权限配置</span></div>
+      <div class="nav-item" data-page="workspace"><span class="ni">🏢</span><span>工作空间</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">系统管理</div>
+      <div class="nav-item" data-page="mcp"><span class="ni">🔌</span><span>MCP服务</span></div>
+      <div class="nav-item" data-page="assistant"><span class="ni">🧩</span><span>小助手应用</span></div>
+      <div class="nav-item" data-page="model-config"><span class="ni">🧠</span><span>AI模型配置</span></div>
+      <div class="nav-item" data-page="settings"><span class="ni">🔧</span><span>系统设置</span></div>
+    </div>
+  </nav>
+  <div class="sidebar-footer" style="flex-direction:column;align-items:stretch;gap:6px;">
+    <div class="user-footer">
+      <div class="avatar" id="userAvatar">A</div>
+      <div class="uf-main"><div style="font-size:12px;font-weight:600;" id="userName">…</div><div style="font-size:10px;color:var(--gray-500);" id="userRole">…</div></div>
+      <button class="logout-btn" onclick="doLogout()" title="退出登录">退出</button>
+    </div>
+    <div style="font-size:10px;color:#6B7280;text-align:center;line-height:1.5;">V1.0.0 · 公众号：IT邦德 · 微信：jem_db</div>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-tabs">
+      <div class="topbar-tab active" data-tab="workspace">问数工作台</div>
+      <div class="topbar-tab" data-tab="data">数据管理</div>
+      <div class="topbar-tab" data-tab="context">业务上下文</div>
+      <div class="topbar-tab" data-tab="permission">权限管理</div>
+      <div class="topbar-tab" data-tab="system">系统管理</div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="ws-selector" id="wsSelector">
+      🏢 <span id="wsSelectorLabel">演示空间</span> <span style="font-size:10px;">▼</span>
+      <div class="ws-menu" id="wsMenu"></div>
+    </div>
+    <button class="btn btn-s btn-sm" onclick="toast('BondQL 帮助文档即将上线','success')">帮助</button>
+  </div>
+
+  <div class="content" id="contentRoot">
+  <!-- ========== 智能问数 ========== -->
+  <div class="page active" id="page-chat">
+    <div class="chat-wrap">
+      <div class="chat-main">
+        <div class="chat-msgs" id="chatMsgs"></div>
+        <div class="chat-input-area">
+          <div class="model-bar">
+            <span>🏢 工作空间：</span><strong id="chatWsLabel" style="color:#1F2937;">—</strong>
+            <span style="margin-left:10px;">🗄️ 数据源：</span>
+            <select class="model-select" id="chatDsSelect" onchange="selectChatDs(this.value)"></select>
+            <span style="margin-left:10px;">🧠 模型：</span>
+            <select class="model-select" id="chatModelSelect" onchange="selectModel(this.value)"></select>
+            <span id="chatModelHint" style="color:#94A3B8;"></span>
+          </div>
+          <div class="chips" id="suggestChips"></div>
+          <div class="input-box">
+            <input type="text" id="chatInput" placeholder="用自然语言提问，例如：华南大区本月的销售业绩是多少？" onkeydown="if(event.key==='Enter')sendMessage()">
+            <button class="btn btn-p" onclick="sendMessage()" style="border-radius:8px;">发送 ➤</button>
+            <button class="btn btn-s" onclick="newChat()" style="border-radius:8px;" title="新建会话">＋ 新会话</button>
+          </div>
+        </div>
+      </div>
+      <div class="evidence" id="evidencePanel"></div>
+    </div>
+  </div>
+
+  <!-- ========== 仪表板 ========== -->
+  <div class="page" id="page-dashboard">
+    <div class="page-head">
+      <div><h2 class="page-title">仪表板</h2><p class="page-sub">把问数结果沉淀为可复用的监控视图</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="toast('演示环境暂不支持新建仪表板','error')">＋ 新建仪表板</button></div>
+    </div>
+    <div class="grid g3" id="dashboardGrid"></div>
+  </div>
+
+  <!-- ========== 问数历史 ========== -->
+  <div class="page" id="page-history">
+    <div class="page-head">
+      <div><h2 class="page-title">问数历史</h2><p class="page-sub">检索、恢复与复用历史会话</p></div>
+      <div class="page-actions"><button class="btn btn-s" onclick="clearHistory()">清空历史</button></div>
+    </div>
+    <div class="card"><div class="card-body" id="historyList"></div></div>
+  </div>
+
+  <!-- ========== 数据源管理 ========== -->
+  <div class="page" id="page-datasources">
+    <div class="page-head">
+      <div><h2 class="page-title">数据源管理</h2><p class="page-sub">管理各类数据连接信息，是智能问数和数据分析的数据来源</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="openDataSourceModal()">＋ 新建数据源</button></div>
+    </div>
+    <div class="grid g3" id="datasourceGrid"></div>
+    <div style="margin-top:16px;font-size:12px;color:var(--gray-500);">支持的数据源类型：MySQL、SQL Server、Oracle、PostgreSQL、达梦、Kingbase、ClickHouse、Apache Doris、Elasticsearch、StarRocks、AWS RedShift、Apache Hive、Excel/CSV</div>
+  </div>
+
+  <!-- ========== 表管理 ========== -->
+  <div class="page" id="page-table-management">
+    <div class="page-head">
+      <div><h2 class="page-title">表管理</h2><p class="page-sub" id="tableMgmtSub">筛选、重命名数据库中的表和字段，添加业务描述</p></div>
+      <div class="page-actions"><button class="btn btn-s" onclick="saveTables()">保存配置</button></div>
+    </div>
+    <div class="card"><div class="card-body"><div class="tbl-wrap" id="tableMgmtList"></div></div></div>
+  </div>
+
+  <!-- ========== 表关联关系 ========== -->
+  <div class="page" id="page-table-relations">
+    <div class="page-head">
+      <div><h2 class="page-title">表关联关系管理</h2><p class="page-sub">通过可视化界面定义表与表之间的 JOIN 关系</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="saveRelations()">💾 保存关联</button></div>
+    </div>
+    <div class="card"><div class="card-body">
+      <div class="model-canvas" id="relationCanvas"></div>
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px;">待保存的关联（草稿）</div>
+        <div class="tbl-wrap"><table class="tbl" id="relationTable"></table></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ========== 术语配置 ========== -->
+  <div class="page" id="page-terms">
+    <div class="page-head">
+      <div><h2 class="page-title">术语配置</h2><p class="page-sub">建立业务术语与数据库字段之间的翻译词典，消除大语言模型的歧义理解</p></div>
+      <div class="page-actions"><button class="btn btn-s" onclick="toast('已导出术语词典','success')">批量导入</button><button class="btn btn-p" onclick="openTermModal()">＋ 新增术语</button></div>
+    </div>
+    <div class="card"><div class="card-body"><div class="toolbar"><div class="search"><span class="si">🔍</span><input placeholder="搜索术语..." oninput="renderTerms(this.value)"></div></div><div class="tbl-wrap" id="termsList"></div></div></div>
+  </div>
+
+  <!-- ========== SQL示例库 ========== -->
+  <div class="page" id="page-sql-examples">
+    <div class="page-head">
+      <div><h2 class="page-title">SQL示例库</h2><p class="page-sub">针对高频、复杂查询，预先录入标准问题和标准答案 SQL</p></div>
+      <div class="page-actions"><button class="btn btn-s" onclick="toast('已导出示例库','success')">批量导入</button><button class="btn btn-p" onclick="openExampleModal()">＋ 新增示例</button></div>
+    </div>
+    <div class="card"><div class="card-body"><div class="tbl-wrap" id="examplesList"></div></div></div>
+  </div>
+
+  <!-- ========== 自定义提示词 ========== -->
+  <div class="page" id="page-prompts">
+    <div class="page-head">
+      <div><h2 class="page-title">自定义提示词</h2><p class="page-sub">定义适用于所有查询的通用规则</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="openPromptModal()">＋ 新建提示词</button></div>
+    </div>
+    <div class="card"><div class="card-body" id="promptsList"></div></div>
+  </div>
+
+  <!-- ========== 权限配置 ========== -->
+  <div class="page" id="page-permissions">
+    <div class="page-head">
+      <div><h2 class="page-title">权限配置</h2><p class="page-sub">通过规则组设置行权限与列权限，实现不同成员间的数据隔离</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="openRuleModal()">＋ 添加规则组</button></div>
+    </div>
+    <div id="permissionsList"></div>
+  </div>
+
+  <!-- ========== 工作空间 ========== -->
+  <div class="page" id="page-workspace">
+    <div class="page-head">
+      <div><h2 class="page-title">工作空间</h2><p class="page-sub">资源隔离与权限管理的基本单元，不同工作空间的数据源、会话、仪表板互不可见</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="openWorkspaceModal()">＋ 新建工作空间</button></div>
+    </div>
+    <div class="grid g2" id="workspaceGrid"></div>
+  </div>
+
+  <!-- ========== MCP服务 ========== -->
+  <div class="page" id="page-mcp">
+    <div class="page-head">
+      <div><h2 class="page-title">MCP服务</h2><p class="page-sub">通过 Model Context Protocol 让第三方平台调用智能问数能力</p></div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><span class="card-title">MCP服务端点</span></div>
+      <div class="card-body">
+        <div class="kv"><span class="kk">服务地址</span><span class="kv2" style="font-family:monospace;">http://&lt;服务器IP&gt;:8001</span></div>
+        <div class="kv"><span class="kk">传输方式</span><span class="kv2">SSE / Streamable HTTP</span></div>
+        <div class="kv"><span class="kk">认证方式</span><span class="kv2">JWT Token（通过 mcp_start 获取）</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><span class="card-title">MCP工具清单</span></div>
+      <div class="card-body">
+        <div class="grid g2">
+          <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+            <div style="font-family:monospace;font-size:13px;font-weight:600;color:var(--primary);">mcp_start</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">登录并创建问数会话，返回 access_token 和 chat_id</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">参数：username, password</div>
+          </div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+            <div style="font-family:monospace;font-size:13px;font-weight:600;color:var(--primary);">mcp_question</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">提交问题到已有会话，返回 SQL、数据、图表</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">参数：token, chat_id, question, stream, return_img</div>
+          </div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+            <div style="font-family:monospace;font-size:13px;font-weight:600;color:var(--primary);">mcp_ws_list</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">获取当前用户可访问的工作空间列表</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">参数：token</div>
+          </div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+            <div style="font-family:monospace;font-size:13px;font-weight:600;color:var(--primary);">mcp_datasource_list</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">获取指定工作空间下可用于问数的数据源</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">参数：token, oid</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">已集成平台</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <span class="tag t-blue" style="padding:6px 14px;font-size:13px;">Dify</span>
+          <span class="tag t-blue" style="padding:6px 14px;font-size:13px;">MaxKB</span>
+          <span class="tag t-blue" style="padding:6px 14px;font-size:13px;">n8n</span>
+          <span class="tag t-blue" style="padding:6px 14px;font-size:13px;">DataEase</span>
+          <span class="tag t-blue" style="padding:6px 14px;font-size:13px;">Coze</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 小助手应用 ========== -->
+  <div class="page" id="page-assistant">
+    <div class="page-head">
+      <div><h2 class="page-title">小助手应用</h2><p class="page-sub">通过嵌入式小助手将智能问数能力嵌入第三方系统页面</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="openAssistantModal()">＋ 新建应用</button></div>
+    </div>
+    <div class="grid g2" id="assistantGrid"></div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-body">
+        <div class="assistant-preview">
+          <div style="font-size:16px;font-weight:700;">🤖 BondQL 智能问数小助手</div>
+          <div style="font-size:13px;opacity:0.92;margin-top:6px;">点击即可嵌入到您的业务系统中</div>
+          <div class="assistant-btn" onclick="toast('已复制嵌入代码','success')">💬 智能问数</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== AI模型配置 ========== -->
+  <div class="page" id="page-model-config">
+    <div class="page-head">
+      <div><h2 class="page-title">AI模型配置</h2><p class="page-sub">配置大语言模型，BondQL 利用大模型能力将自然语言转换为 SQL</p></div>
+      <div class="page-actions"><button class="btn btn-p" onclick="openModelModal()">＋ 添加模型</button></div>
+    </div>
+    <div class="card"><div class="card-body"><div class="tbl-wrap" id="modelsList"></div></div></div>
+  </div>
+
+  <!-- ========== 系统设置 ========== -->
+  <div class="page" id="page-settings">
+    <div class="page-head"><div><h2 class="page-title">系统设置</h2><p class="page-sub">平台全局配置</p></div></div>
+    <div class="grid g2">
+      <div class="card"><div class="card-header"><span class="card-title">MCP服务配置</span></div><div class="card-body">
+        <div class="kv"><span class="kk">服务端口</span><span class="kv2" style="font-family:monospace;">8001</span></div>
+        <div class="kv"><span class="kk">SERVER_IMAGE_HOST</span><span class="kv2" style="font-family:monospace;">http://&lt;BondQL服务器IP&gt;</span></div>
+        <div class="kv"><span class="kk">图表渲染</span><span class="kv2">开启（return_img 可关闭）</span></div>
+      </div></div>
+      <div class="card"><div class="card-header"><span class="card-title">嵌入配置</span></div><div class="card-body">
+        <div class="kv"><span class="kk">跨域设置</span><span class="kv2">允许所有来源</span></div>
+        <div class="kv"><span class="kk">AES加密</span><span class="kv2">开启</span></div>
+        <div class="kv"><span class="kk">接口超时</span><span class="kv2">30秒</span></div>
+      </div></div>
+      <div class="card"><div class="card-header"><span class="card-title">外观设置</span></div><div class="card-body">
+        <div class="kv"><span class="kk">产品名称</span><span class="kv2">BondQL</span></div>
+        <div class="kv"><span class="kk">主题色</span><span class="kv2">#2563EB</span></div>
+        <div class="kv"><span class="kk">语言</span><span class="kv2">简体中文</span></div>
+      </div></div>
+      <div class="card"><div class="card-header"><span class="card-title">关于</span></div><div class="card-body">
+        <div class="kv"><span class="kk">产品</span><span class="kv2">BondQL 智能问数</span></div>
+        <div class="kv"><span class="kk">版本</span><span class="kv2">V1.0.0</span></div>
+        <div class="kv"><span class="kk">公众号</span><span class="kv2">IT邦德</span></div>
+        <div class="kv"><span class="kk">微信</span><span class="kv2">jem_db</span></div>
+      </div></div>
+    </div>
+  </div>
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- 通用弹窗 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" id="modalBox">
+    <div class="modal-hd"><span class="modal-title" id="modalTitle"></span><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-bd" id="modalBody"></div>
+    <div class="modal-ft" id="modalFoot"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- 登录页 -->
+<div class="login-mask" id="loginMask">
+  <div class="login-box">
+    <div class="login-logo">B</div>
+    <div class="login-title">BondQL · 智能问数</div>
+    <div class="login-sub">登录以继续使用</div>
+    <div class="field"><input type="text" id="loginUsername" placeholder="用户名" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="field"><input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="login-btn" onclick="doLogin()">登 录</button>
+    <div class="login-hint" style="color:#94A3B8;">V1.0.0 · 公众号：IT邦德 · 微信：jem_db</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
