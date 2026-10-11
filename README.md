@@ -1,6 +1,6 @@
 # BondQL 智能问数系统 · 使用手册
 
-> **版本**：V1.0.0
+> **版本**：V2.0.0
 > **公众号**：IT邦德　**微信**：jem_db
 
 版权说明：未经公众号：IT邦德 主理人（王丁丁）的授权，不能复制、修改、分发项目用于商业目的。
@@ -493,7 +493,7 @@ SQLite、MySQL、PostgreSQL、Oracle、SQL Server、达梦、Kingbase、ClickHou
 ### 13.4 版本信息
 
 - 产品：BondQL 智能问数
-- 版本：V1.0.0
+- 版本：V2.0.0
 - 公众号：IT邦德
 - 微信：jem_db
 
